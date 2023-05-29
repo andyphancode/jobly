@@ -85,6 +85,66 @@ describe("findAll", function () {
       },
     ]);
   });
+
+  test("return error 400 if min > max", async function () {
+    try {
+      const resp = await Company.findAll({ minEmployees: 10, maxEmployees: 9 });
+    } catch (err) {
+      expect(err.message).toEqual("Cannot have more minimum employees than max.");
+    }
+  });
+
+  test("works: min-max employees", async function () {
+    let companies = await Company.findAll({ minEmployees: 1, maxEmployees: 2 });
+    expect(companies).toEqual([
+      {
+        handle: "c1",
+        name: "C1",
+        description: "Desc1",
+        numEmployees: 1,
+        logoUrl: "http://c1.img",
+      },
+      {
+        handle: "c2",
+        name: "C2",
+        description: "Desc2",
+        numEmployees: 2,
+        logoUrl: "http://c2.img",
+      },
+    ]);
+  });
+
+  test("works: name", async function () {
+    let companies = await Company.findAll({ name: "1" });
+    expect(companies).toEqual([
+      {
+        handle: "c1",
+        name: "C1",
+        description: "Desc1",
+        numEmployees: 1,
+        logoUrl: "http://c1.img",
+      },
+    ]);
+  });
+
+  test("works: min-max and name", async function () {
+    let companies = await Company.findAll({ minEmployees: 1, maxEmployees: 2, name: "1" });
+    expect(companies).toEqual([
+      {
+        handle: "c1",
+        name: "C1",
+        description: "Desc1",
+        numEmployees: 1,
+        logoUrl: "http://c1.img",
+      },
+    ]);
+  });
+
+  test("works: nonexistent company should return empty list", async function () {
+    let companies = await Company.findAll({ name: "fake" });
+    expect(companies).toEqual([]);
+  });
+
 });
 
 /************************************** get */
