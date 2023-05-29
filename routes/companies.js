@@ -11,6 +11,7 @@ const Company = require("../models/company");
 
 const companyNewSchema = require("../schemas/companyNew.json");
 const companyUpdateSchema = require("../schemas/companyUpdate.json");
+const companySearchSchema = require("../schemas/companySearch.json");
 
 const router = new express.Router();
 
@@ -51,8 +52,19 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  */
 
 router.get("/", async function (req, res, next) {
+  // save query string parameters to variable
+  const query = req.query;
+  // convert min and maxEmployee variables to integers to be compatible with jsonschema validation
+  if (query.minEmployees !== undefined) query.minEmployees = +query.minEmployees;
+  if (query.maxEmployees !== undefined) query.maxEmployees = +query.maxEmployees;
+
   try {
-    const companies = await Company.findAll();
+    const validator = jsonschema.validate(query, companySearchSchema);
+    if (!validator.valid) {
+      const errs = validator.errors.map(error => error.stack);
+      throw new BadRequestError(errs);
+    }
+    const companies = await Company.findAll(query);
     return res.json({ companies });
   } catch (err) {
     return next(err);
