@@ -47,6 +47,9 @@ class Company {
   /** Find all companies.
    *
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
+   * 
+   * Optional filter using queryFilters. 
+   * 
    * */
 
   static async findAll(queryFilters = {}) {
