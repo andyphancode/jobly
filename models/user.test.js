@@ -141,6 +141,7 @@ describe("get", function () {
       lastName: "U1L",
       email: "u1@email.com",
       isAdmin: false,
+      jobs: []
     });
   });
 
@@ -229,3 +230,39 @@ describe("remove", function () {
     }
   });
 });
+
+/************************************** applyForJob */
+
+describe("applyForJob", function () {
+  test("works", async function () {
+    await User.applyForJob("u1", testJobIds[0]);
+    const res = await db.query(
+      `SELECT * FROM applications WHERE job_id = $1`, [testJobIds[0]]
+    );
+    expect(res.rows).toEqual(
+      [
+        {
+          job_id: testJobIds[0],
+          username: "u1"
+        }
+      ]);
+  });
+
+  test("not found if no such job", async function () {
+    try {
+      await User.applyForJob("u1", 0);
+      fail();
+    } catch (err) {
+      expect (err instanceof NotFoundError).toBeTruthy();
+    }
+  });
+
+  test("not found if no such user", async function () {
+    try {
+      await User.applyForJob("notRealUser", testJobIds[0]);
+      fail();
+    } catch (err) {
+      expect (err instanceof NotFoundError).toBeTruthy();
+    }
+  });
+})
