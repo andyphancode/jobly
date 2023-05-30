@@ -38,3 +38,94 @@ router.post("/", ensureAdmin, async function (req, res, next) {
         return next(err);
     }
 });
+
+/** GET /  =>
+ *   { jobs: [ { id, title, salary, equity, companyHandle }, ...] }
+ *
+ * Can filter on provided search filters:
+ * - minSalary
+ * - hasEquity
+ * - nameLike (will find case-insensitive, partial matches for job titles)
+ *
+ * Authorization required: none
+ */
+
+router.get("/", async function (req, res, next) {
+    // save query string parameters to variable
+    const query = req.query;
+    // convert minSalary to integer, hasEquity to boolean to be compatible with jsonschema
+    if (query.minSalary !== undefined) query.minSalary = +query.minSalary;
+    query.hasEquity = (query.hasEquity === 'true');
+
+    try {
+        const validator = jsonschema.validate(query, jobSearchSchema);
+        if (!validator.valid) {
+          const errs = validator.errors.map(error => error.stack);
+          throw new BadRequestError(errs);
+        }
+        const jobs = await Job.findAll(query);
+        return res.json({ jobs });
+    } catch (err) {
+        return next(err);
+    }
+});
+
+/** GET /[id]  =>  { job }
+ *
+ *  Job is { id, title, salary, equity, companyHandle, company }
+ *      where company is { handle, name, description, numEmployees, logoUrl }
+ *
+ * Authorization required: none
+ */
+
+router.get("/:id", async function (req, res, next) {
+  try {
+    const job = await Job.get(req.params.id);
+    return res.json({ job });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+/** PATCH /[id] { fld1, fld2, ... } => { job }
+ *
+ * Patches job data.
+ *
+ * fields can be: { title, salary, equity }
+ *
+ * Returns { id, title, salary, equity, companyHandle }
+ *
+ * Authorization required: admin
+ */
+
+router.patch("/:id", ensureAdmin, async function (req, res, next) {
+    try {
+      const validator = jsonschema.validate(req.body, jobUpdateSchema);
+      if (!validator.valid) {
+        const errs = validator.errors.map(e => e.stack);
+        throw new BadRequestError(errs);
+      }
+  
+      const job = await Job.update(req.params.id, req.body);
+      return res.json({ job });
+    } catch (err) {
+      return next(err);
+    }
+});
+
+/** DELETE /[id]  =>  { deleted: id }
+ *
+ * Authorization: admin
+ */
+
+router.delete("/:id", ensureAdmin, async function (req, res, next) {
+    try {
+      await Job.remove(req.params.id);
+      return res.json({ deleted: +req.params.id });
+    } catch (err) {
+      return next(err);
+    }
+});
+
+
+module.exports = router;
