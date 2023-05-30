@@ -63,7 +63,8 @@ router.get("/", ensureAdmin, async function (req, res, next) {
 
 /** GET /[username] => { user }
  *
- * Returns { username, firstName, lastName, isAdmin }
+ * Returns { username, firstName, lastName, isAdmin, jobs }
+ *  where jobs is [jobId, jobId2...]
  *
  * Authorization required: correct user or admin
  **/
@@ -118,5 +119,22 @@ router.delete("/:username", ensureCorrectUserOrAdmin, async function (req, res, 
   }
 });
 
+/** POST /[username]/jobs/[id] => { applied: jobId }
+ * 
+ * Returns { applied: jobId }
+ * 
+ * Authorization required: correct user or admin
+ * 
+ */
+
+router.post("/:username/jobs/:id", ensureCorrectUserOrAdmin, async function (req, res, next) {
+  try {
+    const jobId = +req.params.id;
+    await User.applyForJob(req.params.username, jobId);
+    return res.json({ applied: jobId });
+  } catch (err) {
+    return next(err);
+  }
+});
 
 module.exports = router;
